@@ -31,14 +31,18 @@ async function scrape() {
         const rating = gamePage(".we-rating-count").text().split(" ")[0];
         game.rating = parseFloat(rating);
 
-        const iPadMinOSVersion = gamePage(
+        let iPadMinOSVersion = gamePage(
           ".information-list__item__definition__item__definition"
         )
           .text()
           .split("\n")
-          .find((text) => text.includes("iPadOS"))
-          .trim()
-          .match(/(\d+\.\d+)/)[0];
+          .find((text) => text.includes("iPadOS"));
+
+        if (!iPadMinOSVersion) {
+          return;
+        }
+
+        iPadMinOSVersion = iPadMinOSVersion.trim().match(/(\d+)/)[0];
 
         game.ipadOSVersion = parseInt(iPadMinOSVersion);
 
