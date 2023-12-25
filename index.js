@@ -2,24 +2,27 @@ console.log(":: vintage_store ::");
 
 const axios = require("axios");
 const cheerio = require("cheerio");
+const fs = require("fs");
 
 const url = "https://apps.apple.com/us/genre/ios-games-puzzle/id7012";
 
-async function scrape() {
+async function run() {
+  const games = [];
+
   const response = await axios.get(url);
   const $ = cheerio.load(response.data);
 
   const gameElements = $("#selectedcontent ul li a");
   // const firstTwo = gameElements.slice(0, 2);
 
-  gameElements.each((i, el) => {
+  const requests = gameElements.map(async (i, el) => {
     const game = {
       name: el.children[0].data,
       url: el.attribs.href,
     };
 
-    axios
-      .get(el.attribs.href)
+    await axios
+      .get(game.url)
       .then((gameResponse) => {
         const gamePage = cheerio.load(gameResponse.data);
 
@@ -47,19 +50,27 @@ async function scrape() {
         game.ipadOSVersion = parseInt(iPadMinOSVersion);
 
         if (
-          parseFloat(game.rating) >= 4.5 &&
+          parseFloat(game.rating) >= 4 &&
           game.price === "free" &&
           game.ipadOSVersion <= 9
         ) {
-          console.log(game);
-          console.log("-------------------");
+          games.push(game);
         }
       })
       .catch((error) => {
-        // console.error(`Error fetching ${el.attribs.href}: ${error.message}`);
+        console.log(`Error fetching ${game.url}: ${error.message}`);
       });
+  });
+
+  await Promise.all(requests);
+  fs.writeFile("results.json", JSON.stringify(games, null, 2), (err) => {
+    if (err) {
+      console.error("Error writing to the file:", err);
+    } else {
+      console.log("Results written to results.json");
+    }
   });
 }
 
 // Run the scraping function
-scrape();
+run();
