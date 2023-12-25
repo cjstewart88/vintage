@@ -4,14 +4,15 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const fs = require("fs");
 
-const characters = 'ABCDEFGHIJKLMNOPQRSTUV*'.split('');
+const characters = "ABCDEFGHIJKLMNOPQRSTUV*".split("");
 
 const games = [];
-const concurrencyLimit = 5;
 
 const fetchPage = async (character, pageNum) => {
   try {
-    const pageResponse = await axios.get(`https://apps.apple.com/us/genre/ios-games-puzzle/id7012?letter=${character}&page=${pageNum}`);
+    const pageResponse = await axios.get(
+      `https://apps.apple.com/us/genre/ios-games-puzzle/id7012?letter=${character}&page=${pageNum}`
+    );
     const page = cheerio.load(pageResponse.data);
     const gameLinks = page("#selectedcontent ul li a");
 
@@ -20,54 +21,69 @@ const fetchPage = async (character, pageNum) => {
     if (gameLinks.length <= 1) {
       return null;
     } else {
-      const requests = gameLinks.slice(0, concurrencyLimit).map(async (i, el) => {
+      for (let i = 0; i < gameLinks.length; i++) {
+        const el = gameLinks[i];
         const game = {
           name: el.children[0].data,
           url: el.attribs.href,
         };
 
-        const gameResponse = await axios.get(game.url);
-        const gamePage = cheerio.load(gameResponse.data);
+        try {
+          const gameResponse = await axios.get(game.url);
+          const gamePage = cheerio.load(gameResponse.data);
 
-        const price = gamePage(".app-header__list__item--price")
-          .text()
-          .toLowerCase();
-        game.price = price;
+          game.inAppPurchases =
+            gamePage(".app-header__list__item--in-app-purchase").length === 1;
+          const price = gamePage(".app-header__list__item--price")
+            .text()
+            .toLowerCase();
+          game.price = price;
 
-        const rating = gamePage(".we-rating-count").text().split(" ")[0];
-        game.rating = parseFloat(rating);
+          const ratingData = gamePage(".we-rating-count").text().split(" • ");
+          game.rating = parseFloat(ratingData[0]);
+          game.numberOfRatings = ratingData[1]?.split(" ")[0];
 
-        let iPadMinOSVersion = gamePage(
-          ".information-list__item__definition__item__definition"
-        )
-          .text()
-          .split("\n")
-          .find((text) => text.includes("iPadOS"));
+          let iPadMinOSVersion = gamePage(
+            ".information-list__item__definition__item__definition"
+          )
+            .text()
+            .split("\n")
+            .find((text) => text.includes("iPadOS"));
 
-        if (!iPadMinOSVersion) {
-          return;
+          game.supportsGameCenter =
+            gamePage('.supports-list h3:contains("Game Center")').length === 1;
+
+          if (!iPadMinOSVersion) {
+            continue;
+          }
+
+          iPadMinOSVersion = iPadMinOSVersion.trim().match(/(\d+)/)[0];
+
+          game.ipadOSVersion = parseInt(iPadMinOSVersion);
+
+          if (
+            parseFloat(game.rating) >= 4 &&
+            game.price === "free" &&
+            game.ipadOSVersion <= 9 &&
+            !game.supportsGameCenter &&
+            !game.inAppPurchases
+          ) {
+            console.log(game);
+            games.push(game);
+          }
+        } catch (e) {
+          console.log(
+            `Error fetching ${game.name} - ${game.url}: ${e.message}`
+          );
         }
-
-        iPadMinOSVersion = iPadMinOSVersion.trim().match(/(\d+)/)[0];
-
-        game.ipadOSVersion = parseInt(iPadMinOSVersion);
-
-        if (
-          parseFloat(game.rating) >= 4 &&
-          game.price === "free" &&
-          game.ipadOSVersion <= 9
-        ) {
-          console.log(game)
-          games.push(game);
-        }
-      });
-
-      await Promise.all(requests);
+      }
 
       return pageNum + 1;
     }
   } catch (error) {
-    console.log(`Error fetching ${character} - Page ${pageNum}: ${error.message}`);
+    console.log(
+      `Error fetching ${character} - Page ${pageNum}: ${error.message}`
+    );
   }
 };
 
@@ -75,9 +91,7 @@ const run = async () => {
   for (const character of characters) {
     let page = 1;
     while (page) {
-      const pagesToFetch = Array.from({ length: concurrencyLimit }, (_, i) => page + i);
-      const results = await Promise.all(pagesToFetch.map(pageNum => fetchPage(character, pageNum)));
-      page = results.find(result => result !== null);
+      page = await fetchPage(character, page);
     }
   }
 
