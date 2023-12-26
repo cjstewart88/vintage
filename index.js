@@ -6,7 +6,7 @@ const fs = require("fs");
 
 const characters = "ABCDEFGHIJKLMNOPQRSTUV*".split("");
 
-const games = [];
+const apps = [];
 
 const fetchPage = async (character, pageNum) => {
   try {
@@ -14,48 +14,48 @@ const fetchPage = async (character, pageNum) => {
       `https://apps.apple.com/us/genre/ios-games-puzzle/id7012?letter=${character}&page=${pageNum}`
     );
     const page = cheerio.load(pageResponse.data);
-    const gameLinks = page("#selectedcontent ul li a");
+    const appLinks = page("#selectedcontent ul li a");
 
     // doing this because "L"s have a game that shows up on every page.
     // ie: page 1000 will have this one game on it
-    if (gameLinks.length <= 1) {
+    if (appLinks.length <= 1) {
       return null;
     } else {
-      for (let i = 0; i < gameLinks.length; i++) {
-        const el = gameLinks[i];
-        const game = {
+      for (let i = 0; i < appLinks.length; i++) {
+        const el = appLinks[i];
+        const app = {
           name: el.children[0].data,
           url: el.attribs.href,
         };
 
         try {
-          const gameResponse = await axios.get(game.url);
-          const gamePage = cheerio.load(gameResponse.data);
+          const appResponse = await axios.get(app.url);
+          const appPage = cheerio.load(appResponse.data);
 
-          game.inAppPurchases =
-            gamePage(".app-header__list__item--in-app-purchase").length === 1;
-          const price = gamePage(".app-header__list__item--price")
+          app.inAppPurchases =
+            appPage(".app-header__list__item--in-app-purchase").length === 1;
+          const price = appPage(".app-header__list__item--price")
             .text()
             .toLowerCase();
-          game.price = price;
+          app.price = price;
 
-          const ratingData = gamePage(".we-rating-count").text().split(" • ");
-          game.rating = parseFloat(ratingData[0]);
+          const ratingData = appPage(".we-rating-count").text().split(" • ");
+          app.rating = parseFloat(ratingData[0]);
 
           const numberOfRatings = ratingData[1]?.split(" ")[0];
-          game.numberOfRatings =
+          app.numberOfRatings =
             parseFloat(numberOfRatings || 0) *
             (numberOfRatings?.includes("K") ? 1000 : 1);
 
-          let iPadMinOSVersion = gamePage(
+          let iPadMinOSVersion = appPage(
             ".information-list__item__definition__item__definition"
           )
             .text()
             .split("\n")
             .find((text) => text.includes("iPadOS"));
 
-          game.supportsGameCenter =
-            gamePage('.supports-list h3:contains("Game Center")').length === 1;
+          app.supportsGameCenter =
+            appPage('.supports-list h3:contains("Game Center")').length === 1;
 
           if (!iPadMinOSVersion) {
             continue;
@@ -63,22 +63,20 @@ const fetchPage = async (character, pageNum) => {
 
           iPadMinOSVersion = iPadMinOSVersion.trim().match(/(\d+)/)[0];
 
-          game.ipadOSVersion = parseInt(iPadMinOSVersion);
+          app.ipadOSVersion = parseInt(iPadMinOSVersion);
 
           if (
-            parseFloat(game.rating) >= 4 &&
-            game.numberOfRatings >= 20 &&
-            game.ipadOSVersion <= 9 &&
-            !game.supportsGameCenter &&
-            !game.inAppPurchases
+            parseFloat(app.rating) >= 4 &&
+            app.numberOfRatings >= 20 &&
+            app.ipadOSVersion <= 9 &&
+            !app.supportsGameCenter &&
+            !app.inAppPurchases
           ) {
-            console.log(game);
-            games.push(game);
+            console.log(app);
+            apps.push(app);
           }
         } catch (e) {
-          console.log(
-            `Error fetching ${game.name} - ${game.url}: ${e.message}`
-          );
+          console.log(`Error fetching ${app.name} - ${app.url}: ${e.message}`);
         }
       }
 
@@ -100,7 +98,7 @@ const run = async () => {
   }
 
   // sort by rating and then by numberOfRatings
-  games.sort((a, b) => {
+  apps.sort((a, b) => {
     if (b.rating !== a.rating) {
       return b.rating - a.rating;
     } else {
@@ -108,7 +106,7 @@ const run = async () => {
     }
   });
 
-  fs.writeFile("tmp-data.json", JSON.stringify(games, null, 2), (err) => {
+  fs.writeFile("tmp-data.json", JSON.stringify(apps, null, 2), (err) => {
     if (err) {
       console.error("Error writing to the file:", err);
     } else {

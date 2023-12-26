@@ -1,7 +1,7 @@
 {
   "name": "vintage_store",
   "version": "1.0.0",
-  "description": "search the apple app store for apps that support older version of ios.",
+  "description": "iOS app curator",
   "scripts": {
     "getData": "node index.js",
     "browseData": "http-server"

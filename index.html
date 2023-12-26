@@ -81,32 +81,32 @@
     <table>
       <thead>
         <tr>
-          <th width="50%">Game</th>
+          <th width="50%">App</th>
           <th width="30%">Rating (# of Reviews)</th>
           <th width="20%">Price</th>
         </tr>
       </thead>
-      <tbody id="games"></tbody>
+      <tbody id="apps"></tbody>
     </table>
     <script>
-      let games;
+      let apps;
       let costFilter = "all";
 
-      const gameTableBody = document.getElementById("games");
+      const appsTableBody = document.getElementById("apps");
       const costFilterAllBtn = document.getElementsByClassName("all")[0];
       const costFilterFreeBtn = document.getElementsByClassName("free")[0];
       const costFilterPaidBtn = document.getElementsByClassName("paid")[0];
 
-      const filterByCost = (games) => {
+      const filterByCost = (apps) => {
         switch (costFilter) {
           case "free":
-            return games.filter((game) => game.price === "free");
+            return apps.filter((app) => app.price === "free");
             break;
           case "paid":
-            return games.filter((game) => game.price !== "free");
+            return apps.filter((app) => app.price !== "free");
             break;
           case "all":
-            return games;
+            return apps;
         }
       };
 
@@ -118,7 +118,7 @@
         costFilterFreeBtn.classList.remove("disabled");
         costFilterAllBtn.classList.add("disabled");
         costFilterPaidBtn.classList.add("disabled");
-        buildList(filterByCost(games));
+        buildList(filterByCost(apps));
       });
 
       costFilterAllBtn.addEventListener("click", () => {
@@ -129,7 +129,7 @@
         costFilterAllBtn.classList.remove("disabled");
         costFilterFreeBtn.classList.add("disabled");
         costFilterPaidBtn.classList.add("disabled");
-        buildList(filterByCost(games));
+        buildList(filterByCost(apps));
       });
 
       costFilterPaidBtn.addEventListener("click", () => {
@@ -140,24 +140,24 @@
         costFilterPaidBtn.classList.remove("disabled");
         costFilterFreeBtn.classList.add("disabled");
         costFilterAllBtn.classList.add("disabled");
-        buildList(filterByCost(games));
+        buildList(filterByCost(apps));
       });
 
-      const buildList = (gamesToRender) => {
-        const rows = gamesToRender
-          .map((g) => {
+      const buildList = (appsToRender) => {
+        const rows = appsToRender
+          .map((app) => {
             return `
 
                 <tr>
-                  <td class="game-name"><a href="${g.url}" target="_blank" alt="${g.name}">${g.name}</a></td>
-                  <td>${g.rating} (${g.numberOfRatings})</td>
-                  <td>${g.price}</td>
+                  <td class="app-name"><a href="${app.url}" target="_blank" alt="${app.name}">${app.name}</a></td>
+                  <td>${app.rating} (${app.numberOfRatings})</td>
+                  <td>${app.price}</td>
                 </tr>
 
             `;
           })
           .join("");
-        gameTableBody.innerHTML = rows;
+        appsTableBody.innerHTML = rows;
       };
 
       document.addEventListener("DOMContentLoaded", () => {
@@ -166,8 +166,8 @@
         xhr.onreadystatechange = function () {
           if (xhr.readyState == 4 && xhr.status == 200) {
             var data = JSON.parse(xhr.responseText);
-            games = data;
-            buildList(filterByCost(games));
+            apps = data;
+            buildList(filterByCost(apps));
           }
         };
         xhr.send();
