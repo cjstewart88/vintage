@@ -2,13 +2,14 @@
   "name": "vintage_store",
   "version": "1.0.0",
   "description": "search the apple app store for apps that support older version of ios.",
-  "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "getData": "node index.js",
+    "browseData": "http-server"
   },
   "dependencies": {
     "axios": "^1.6.2",
-    "cheerio": "^1.0.0-rc.12"
+    "cheerio": "^1.0.0-rc.12",
+    "http-server": "^14.1.1"
   },
   "engines": {
     "node": "16.2.0"
