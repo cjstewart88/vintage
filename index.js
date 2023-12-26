@@ -63,7 +63,6 @@ const fetchPage = async (character, pageNum) => {
 
           if (
             parseFloat(game.rating) >= 4 &&
-            game.price === "free" &&
             game.ipadOSVersion <= 9 &&
             !game.supportsGameCenter &&
             !game.inAppPurchases
@@ -95,7 +94,7 @@ const run = async () => {
     }
   }
 
-  fs.writeFile("results.json", JSON.stringify(games, null, 2), (err) => {
+  fs.writeFile("tmp-data.json", JSON.stringify(games, null, 2), (err) => {
     if (err) {
       console.error("Error writing to the file:", err);
     } else {
