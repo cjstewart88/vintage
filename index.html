@@ -1,37 +1,174 @@
+<!DOCTYPE html>
 <html>
   <head>
     <title>vintage</title>
     <style>
+      body {
+        background-color: rgb(37, 37, 47);
+        color: #dbd8b2;
+        font-size: 14px;
+        font-family: monospace;
+      }
+
+      a {
+        color: #dbd8b2;
+        text-decoration: none;
+
+        &:hover {
+          text-decoration: underline;
+        }
+
+        &:visited {
+          color: rgb(78, 78, 100);
+        }
+      }
+
+      th {
+        text-align: left;
+        font-size: 16px;
+      }
+
+      tr {
+        &:hover {
+          td {
+            background-color: #dbd8b2;
+            color: rgb(37, 37, 47);
+
+            a {
+              color: rgb(37, 37, 47);
+            }
+          }
+        }
+      }
+
+      .btn-grp {
+        padding-top: 8px;
+        margin-bottom: 24px;
+        font-weight: bold;
+        font-size: 16px;
+
+        button {
+          font-family: monospace;
+          border-radius: 0;
+          font-weight: bold;
+          padding: 4px 10px;
+
+          &:first-of-type {
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+          }
+
+          &:last-of-type {
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+          }
+
+          &.disabled {
+            color: gray;
+            cursor: pointer;
+          }
+        }
+      }
     </style>
   </head>
   <body>
-    <ul id="games">
-    </ul>
+    <div class="btn-grp">
+      Cost:
+      <button class="all">All</button><button class="free disabled">Free</button
+      ><button class="paid disabled">Paid</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th width="50%">Game</th>
+          <th width="30%">Rating (# of Reviews)</th>
+          <th width="20%">Price</th>
+        </tr>
+      </thead>
+      <tbody id="games"></tbody>
+    </table>
     <script>
-      let games
-      const gamesList = document.getElementById('games')
+      let games;
+      let costFilter = "all";
 
-      const buildList = () => {
-        const listitems = games.map((g) => {
-          return `
-            <li>
-              ${g.rating}
-              ${g.price}
-              <a href="${g.url}" target="_blank">${g.name}</a>
-            </li>`
-        }).join('')
-        gamesList.innerHTML = listitems
-      }
+      const gameTableBody = document.getElementById("games");
+      const costFilterAllBtn = document.getElementsByClassName("all")[0];
+      const costFilterFreeBtn = document.getElementsByClassName("free")[0];
+      const costFilterPaidBtn = document.getElementsByClassName("paid")[0];
 
-      document.addEventListener('DOMContentLoaded', () => {
-        fetch('data.json')
-          .then(response => response.json())
-          .then(data => {
-            games = data
-            buildList()
+      const filterByCost = (games) => {
+        switch (costFilter) {
+          case "free":
+            return games.filter((game) => game.price === "free");
+            break;
+          case "paid":
+            return games.filter((game) => game.price !== "free");
+            break;
+          case "all":
+            return games;
+        }
+      };
+
+      costFilterFreeBtn.addEventListener("click", () => {
+        if (costFilter === "free") {
+          return;
+        }
+        costFilter = "free";
+        costFilterFreeBtn.classList.remove("disabled");
+        costFilterAllBtn.classList.add("disabled");
+        costFilterPaidBtn.classList.add("disabled");
+        buildList(filterByCost(games));
+      });
+
+      costFilterAllBtn.addEventListener("click", () => {
+        if (costFilter === "all") {
+          return;
+        }
+        costFilter = "all";
+        costFilterAllBtn.classList.remove("disabled");
+        costFilterFreeBtn.classList.add("disabled");
+        costFilterPaidBtn.classList.add("disabled");
+        buildList(filterByCost(games));
+      });
+
+      costFilterPaidBtn.addEventListener("click", () => {
+        if (costFilter === "paid") {
+          return;
+        }
+        costFilter = "paid";
+        costFilterPaidBtn.classList.remove("disabled");
+        costFilterFreeBtn.classList.add("disabled");
+        costFilterAllBtn.classList.add("disabled");
+        buildList(filterByCost(games));
+      });
+
+      const buildList = (gamesToRender) => {
+        const rows = gamesToRender
+          .map((g) => {
+            return `
+
+                <tr>
+                  <td class="game-name"><a href="${g.url}" target="_blank" alt="${g.name}">${g.name}</a></td>
+                  <td>${g.rating} (${g.numberOfRatings})</td>
+                  <td>${g.price}</td>
+                </tr>
+
+            `;
+          })
+          .join("");
+        gameTableBody.innerHTML = rows;
+      };
+
+      document.addEventListener("DOMContentLoaded", () => {
+        fetch("data.json")
+          .then((response) => response.json())
+          .then((data) => {
+            games = data;
+            games;
+            buildList(filterByCost(games));
           });
       });
     </script>
   </body>
 </html>
-
