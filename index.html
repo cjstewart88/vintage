@@ -161,13 +161,16 @@
       };
 
       document.addEventListener("DOMContentLoaded", () => {
-        fetch("data.json")
-          .then((response) => response.json())
-          .then((data) => {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "data.json", true);
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState == 4 && xhr.status == 200) {
+            var data = JSON.parse(xhr.responseText);
             games = data;
-            games;
             buildList(filterByCost(games));
-          });
+          }
+        };
+        xhr.send();
       });
     </script>
   </body>
