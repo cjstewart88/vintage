@@ -41,7 +41,11 @@ const fetchPage = async (character, pageNum) => {
 
           const ratingData = gamePage(".we-rating-count").text().split(" • ");
           game.rating = parseFloat(ratingData[0]);
-          game.numberOfRatings = ratingData[1]?.split(" ")[0];
+
+          const numberOfRatings = ratingData[1]?.split(" ")[0];
+          game.numberOfRatings =
+            parseFloat(numberOfRatings || 0) *
+            (numberOfRatings?.includes("K") ? 1000 : 1);
 
           let iPadMinOSVersion = gamePage(
             ".information-list__item__definition__item__definition"
@@ -63,6 +67,7 @@ const fetchPage = async (character, pageNum) => {
 
           if (
             parseFloat(game.rating) >= 4 &&
+            game.numberOfRatings >= 20 &&
             game.ipadOSVersion <= 9 &&
             !game.supportsGameCenter &&
             !game.inAppPurchases
@@ -94,11 +99,20 @@ const run = async () => {
     }
   }
 
+  // sort by rating and then by numberOfRatings
+  games.sort((a, b) => {
+    if (b.rating !== a.rating) {
+      return b.rating - a.rating;
+    } else {
+      return b.numberOfRatings - a.numberOfRatings;
+    }
+  });
+
   fs.writeFile("tmp-data.json", JSON.stringify(games, null, 2), (err) => {
     if (err) {
       console.error("Error writing to the file:", err);
     } else {
-      console.log("Results written to results.json");
+      console.log("Results written to tmp-data.json");
     }
   });
 };
