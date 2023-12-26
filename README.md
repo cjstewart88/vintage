@@ -5,7 +5,18 @@ currates apps using data from https://apps.apple.com and provides a simple UI fo
 
 Browse the data here: https://cjstewart88.github.io/vintage
 
+#### Current Criteria
+
+- games
+- min iOS version 9
+- over 20 reviews
+- 4+ rating
+- does not use game center
+- does not have in-app purchases
+
 ### Setup
+
+The data is sorted by rating and then by number of ratings. You can also filter by cost (all/free/paid)
 
 ```
 npm install
