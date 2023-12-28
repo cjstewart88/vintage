@@ -72,84 +72,119 @@
     </style>
   </head>
   <body>
-    <div class="btn-grp">
+    <div class="btn-grp cost-btns">
       Cost:
-      <button class="all">All</button><button class="free disabled">Free</button
-      ><button class="paid disabled">Paid</button>
+      <button>Free</button><button>Paid</button>
+    </div>
+    <div class="btn-grp genre-btns">
+      Genre:
+      <button>Action</button><button>Adventure</button><button>Board</button
+      ><button>Card</button><button>Casino</button><button>Casual</button
+      ><button>Family</button><button>Music</button><button>Puzzle</button
+      ><button>Racing</button><button>Role Playing</button
+      ><button>Simulation</button><button>Sports</button
+      ><button>Strategy</button><button>Trivia</button><button>Word</button>
     </div>
 
     <table>
       <thead>
         <tr>
           <th width="50%">App</th>
-          <th width="30%">Rating (# of Reviews)</th>
-          <th width="20%">Price</th>
+          <th width="15%">Genre</th>
+          <th width="20%">Rating (# of Reviews)</th>
+          <th width="15%">Price</th>
         </tr>
       </thead>
       <tbody id="apps"></tbody>
     </table>
     <script>
       let apps;
-      let costFilter = "all";
+      let costFilter = ["paid", "free"];
+      let genreFilter = [
+        "action",
+        "adventure",
+        "board",
+        "card",
+        "casino",
+        "casual",
+        "family",
+        "music",
+        "puzzle",
+        "racing",
+        "role-playing",
+        "simulation",
+        "sports",
+        "strategy",
+        "trivia",
+        "word",
+      ];
 
       const appsTableBody = document.getElementById("apps");
-      const costFilterAllBtn = document.getElementsByClassName("all")[0];
-      const costFilterFreeBtn = document.getElementsByClassName("free")[0];
-      const costFilterPaidBtn = document.getElementsByClassName("paid")[0];
+      const costBtns = document
+        .getElementsByClassName("cost-btns")[0]
+        .getElementsByTagName("button");
+      const genreBtns = document
+        .getElementsByClassName("genre-btns")[0]
+        .getElementsByTagName("button");
 
-      const filterByCost = (apps) => {
-        switch (costFilter) {
-          case "free":
-            return apps.filter((app) => app.price === "free");
-            break;
-          case "paid":
-            return apps.filter((app) => app.price !== "free");
-            break;
-          case "all":
-            return apps;
+      const filterApps = () => {
+        let filteredApps = apps;
+
+        if (costFilter.includes("free") && !costFilter.includes("paid")) {
+          filteredApps = filteredApps.filter((app) => app.price === "free");
+        } else if (
+          costFilter.includes("paid") &&
+          !costFilter.includes("free")
+        ) {
+          filteredApps = filteredApps.filter((app) => app.price !== "free");
         }
+
+        filteredApps = filteredApps.filter((app) =>
+          app.genres.some((genre) => genreFilter.includes(genre))
+        );
+
+        return filteredApps;
       };
 
-      costFilterFreeBtn.addEventListener("click", () => {
-        if (costFilter === "free") {
-          return;
-        }
-        costFilter = "free";
-        costFilterFreeBtn.classList.remove("disabled");
-        costFilterAllBtn.classList.add("disabled");
-        costFilterPaidBtn.classList.add("disabled");
-        buildList(filterByCost(apps));
-      });
+      for (let i = 0; i < genreBtns.length; i++) {
+        genreBtns[i].addEventListener("click", (el) => {
+          const genre = el.target.innerText.toLowerCase().replace(" ", "-");
+          const genreIndex = genreFilter.indexOf(genre);
+          if (genreIndex >= 0) {
+            genreFilter.splice(genreIndex, 1);
+            el.target.classList.add("disabled");
+          } else {
+            genreFilter.push(genre);
+            el.target.classList.remove("disabled");
+          }
+          buildList();
+        });
+      }
 
-      costFilterAllBtn.addEventListener("click", () => {
-        if (costFilter === "all") {
-          return;
-        }
-        costFilter = "all";
-        costFilterAllBtn.classList.remove("disabled");
-        costFilterFreeBtn.classList.add("disabled");
-        costFilterPaidBtn.classList.add("disabled");
-        buildList(filterByCost(apps));
-      });
+      for (let i = 0; i < costBtns.length; i++) {
+        costBtns[i].addEventListener("click", (el) => {
+          const cost = el.target.innerText.toLowerCase();
+          const costIndex = costFilter.indexOf(cost);
+          if (costIndex >= 0) {
+            costFilter.splice(costIndex, 1);
+            el.target.classList.add("disabled");
+          } else {
+            costFilter.push(cost);
+            el.target.classList.remove("disabled");
+          }
+          buildList();
+        });
+      }
 
-      costFilterPaidBtn.addEventListener("click", () => {
-        if (costFilter === "paid") {
-          return;
-        }
-        costFilter = "paid";
-        costFilterPaidBtn.classList.remove("disabled");
-        costFilterFreeBtn.classList.add("disabled");
-        costFilterAllBtn.classList.add("disabled");
-        buildList(filterByCost(apps));
-      });
-
-      const buildList = (appsToRender) => {
+      const buildList = () => {
+        const appsToRender = filterApps();
         const rows = appsToRender
           .map((app) => {
             return `
 
                 <tr>
                   <td class="app-name"><a href="${app.url}" target="_blank" alt="${app.name}">${app.name}</a></td>
+                  <td>${app.genres}</td>
                   <td>${app.rating} (${app.numberOfRatings})</td>
                   <td>${app.price}</td>
                 </tr>
@@ -167,7 +202,7 @@
           if (xhr.readyState == 4 && xhr.status == 200) {
             var data = JSON.parse(xhr.responseText);
             apps = data;
-            buildList(filterByCost(apps));
+            buildList();
           }
         };
         xhr.send();
